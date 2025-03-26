@@ -72,3 +72,18 @@ oneplus1 = 2
 tenplus2_2 = 12
 oneplus1_2 = 2
 ```
+
+
+## Implementing a strategy
+
+Create a new struct that implements the following Interface
+
+```go
+type StrategyInterface[T any] interface {
+	Set(*Cache[T], string, T)
+	Get(*Cache[T], string) (T, bool)
+}
+```
+
+That's all you need to use your custom strategy. Refer to [FIFO Strategy Implementation](./strategy/fifo.go) for reference.
+> NOTE: Locks are managed on the Cache level and strategies don't have to worry about those

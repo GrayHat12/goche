@@ -13,30 +13,30 @@ type StrategyInterface[T any] interface {
 }
 
 type Cache[T any] struct {
-	Mux      sync.RWMutex
+	mux      sync.RWMutex
 	Max      int
-	Strategy StrategyInterface[T]
+	strategy StrategyInterface[T]
 }
 
 func NewCache[T any](max int, newStrategy NewStrategyGenerator[T]) *Cache[T] {
 	var strategy StrategyInterface[T]
 	cache := &Cache[T]{sync.RWMutex{}, max, strategy}
 	strategy = newStrategy(cache)
-	cache.Strategy = strategy
+	cache.strategy = strategy
 	return cache
 }
 
 func (c *Cache[T]) Set(id string, value T) {
-	c.Mux.Lock()
-	c.Strategy.Set(c, id, value)
-	defer c.Mux.Unlock()
+	c.mux.Lock()
+	c.strategy.Set(c, id, value)
+	defer c.mux.Unlock()
 }
 
 func (c *Cache[T]) Get(id string) (T, error) {
 	var none T
-	c.Mux.RLock()
-	v, ok := c.Strategy.Get(c, id)
-	c.Mux.RUnlock()
+	c.mux.RLock()
+	v, ok := c.strategy.Get(c, id)
+	c.mux.RUnlock()
 
 	if !ok {
 		return none, errors.New("a value with given key not found")
