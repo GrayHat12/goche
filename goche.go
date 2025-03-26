@@ -5,39 +5,38 @@ import (
 	"sync"
 )
 
-type GenericFunction[T any] func() T
+type NewStrategyGenerator[T any] func(*Cache[T]) StrategyInterface[T]
+
+type StrategyInterface[T any] interface {
+	Set(*Cache[T], string, T)
+	Get(*Cache[T], string) (T, bool)
+}
 
 type Cache[T any] struct {
-	store map[string]T
-	mux   sync.RWMutex
-	keys  []string
-	index int
-	max   int
+	Mux      sync.RWMutex
+	Max      int
+	Strategy StrategyInterface[T]
 }
 
-func NewCache[T any](max int) *Cache[T] {
-	return &Cache[T]{make(map[string]T), sync.RWMutex{}, make([]string, max), 0, max}
-}
-
-func (c *Cache[T]) removeKeyOnCurrentIndex() {
-	key_on_current_index := c.keys[c.index]
-	delete(c.store, key_on_current_index)
+func NewCache[T any](max int, newStrategy NewStrategyGenerator[T]) *Cache[T] {
+	var strategy StrategyInterface[T]
+	cache := &Cache[T]{sync.RWMutex{}, max, strategy}
+	strategy = newStrategy(cache)
+	cache.Strategy = strategy
+	return cache
 }
 
 func (c *Cache[T]) Set(id string, value T) {
-	c.mux.Lock()
-	defer c.mux.Unlock()
-	c.removeKeyOnCurrentIndex()
-	c.keys[c.index] = id
-	c.index = (c.index + 1) % c.max
-	c.store[id] = value
+	c.Mux.Lock()
+	c.Strategy.Set(c, id, value)
+	defer c.Mux.Unlock()
 }
 
 func (c *Cache[T]) Get(id string) (T, error) {
 	var none T
-	c.mux.RLock()
-	v, ok := c.store[id]
-	c.mux.RUnlock()
+	c.Mux.RLock()
+	v, ok := c.Strategy.Get(c, id)
+	c.Mux.RUnlock()
 
 	if !ok {
 		return none, errors.New("a value with given key not found")
