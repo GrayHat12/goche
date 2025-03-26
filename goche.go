@@ -16,13 +16,10 @@ type Cache[T any] struct {
 }
 
 func NewCache[T any](max int) *Cache[T] {
-	return &Cache[T]{make(map[string]T), sync.RWMutex{}, []string{}, 0, max}
+	return &Cache[T]{make(map[string]T), sync.RWMutex{}, make([]string, max), 0, max}
 }
 
 func (c *Cache[T]) removeKeyOnCurrentIndex() {
-	if c.index >= len(c.keys) {
-		return
-	}
 	key_on_current_index := c.keys[c.index]
 	delete(c.store, key_on_current_index)
 }
