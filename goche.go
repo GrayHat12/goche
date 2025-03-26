@@ -11,15 +11,18 @@ type Cache[T any] struct {
 	store map[string]T
 	mux   sync.RWMutex
 	keys  []string
-	index int8
-	max   int8
+	index int
+	max   int
 }
 
-func NewCache[T any](max int8) *Cache[T] {
+func NewCache[T any](max int) *Cache[T] {
 	return &Cache[T]{make(map[string]T), sync.RWMutex{}, []string{}, 0, max}
 }
 
 func (c *Cache[T]) removeKeyOnCurrentIndex() {
+	if c.index >= len(c.keys) {
+		return
+	}
 	key_on_current_index := c.keys[c.index]
 	delete(c.store, key_on_current_index)
 }
