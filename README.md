@@ -2,6 +2,12 @@
 
 A thread safe caching module for golang with customizable cache eviction strategies
 
+## Installation
+
+```sh
+go get github.com/GrayHat12/goche
+```
+
 ## Example
 
 ```go
