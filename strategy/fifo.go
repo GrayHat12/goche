@@ -1,34 +1,34 @@
 package strategy
 
-import "github.com/GrayHat12/goche"
+import (
+	"cmp"
 
-type FIFOStrategy[T any] struct {
-	store map[string]T
-	keys  []string
-	index int
+	"github.com/GrayHat12/goche"
+	"github.com/GrayHat12/goche/libs"
+)
+
+type FIFOStrategy[K cmp.Ordered, T any] struct {
+	store *libs.LinkedList[K, T]
 }
 
-func NewFifoStrategy[T any](cache *goche.Cache[T]) goche.StrategyInterface[T] {
-	return &FIFOStrategy[T]{
-		store: make(map[string]T),
-		keys:  make([]string, cache.Max),
-		index: 0,
+func NewFifoStrategy[K cmp.Ordered, T any](_ *goche.Cache[K, T]) goche.StrategyInterface[K, T] {
+	return &FIFOStrategy[K, T]{
+		store: libs.NewLinkedList[K, T](),
 	}
 }
 
-func (s *FIFOStrategy[T]) removeKeyOnCurrentIndex() {
-	key_on_current_index := s.keys[s.index]
-	delete(s.store, key_on_current_index)
+func (s *FIFOStrategy[K, T]) Set(c *goche.Cache[K, T], id K, val T) {
+	if s.store.Size() >= c.Max {
+		s.store.RemoveFirst()
+	}
+	s.store.Add(id, val)
 }
 
-func (s *FIFOStrategy[T]) Set(c *goche.Cache[T], id string, val T) {
-	s.removeKeyOnCurrentIndex()
-	s.keys[s.index] = id
-	s.index = (s.index + 1) % c.Max
-	s.store[id] = val
-}
-
-func (s *FIFOStrategy[T]) Get(c *goche.Cache[T], id string) (T, bool) {
-	val, ok := s.store[id]
+func (s *FIFOStrategy[K, T]) Get(c *goche.Cache[K, T], id K) (T, bool) {
+	val, ok := s.store.Get(id)
 	return val, ok
+}
+
+func (s *FIFOStrategy[K, T]) Remove(c *goche.Cache[K, T], id K) {
+	s.store.Remove(id)
 }
